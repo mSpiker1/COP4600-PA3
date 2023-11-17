@@ -1,4 +1,4 @@
-obj-m += lkmasg1.o
+obj-m += lkmasg1_input.o lkmasg1_output.o
 
 all:
 	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) modules
@@ -6,4 +6,4 @@ all:
 
 clean:
 	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) clean
-	rm test
+	rm -f test

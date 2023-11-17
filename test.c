@@ -1,14 +1,6 @@
 /**
- * @file   test.c
- * @author Derek Molloy
- * @date   7 April 2015
- * @version 0.1
- * @brief  A Linux user space program that communicates with the charkmod.c LKM. It passes a
- * string to the LKM and reads the response from the LKM. For this example to work the device
- * must be called /dev/charkmod.
- * @see http://www.derekmolloy.ie/ for a full description and follow-up descriptions.
- *
- * Adapted for COP 4600 by Dr. John Aedo
+NOTE: This test file does not currently work as intended for our use case
+This is still the original test file from the second PA
  */
 #include <stdio.h>
 #include <stdlib.h>

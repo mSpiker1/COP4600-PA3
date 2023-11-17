@@ -1,11 +1,7 @@
 /**
-
- * File:	lkmasg1.c
-
- * Adapted for Linux 5.15 by: John Aedo
+ * File:	lkmasg1_input.c
 
  * Class:	COP4600-SP23
-
  */
 
 
@@ -20,109 +16,52 @@
 
 #include <linux/uaccess.h>	  // User access copy function support.
 
-#define DEVICE_NAME "lkmasg1" // Device name.
+#include "lkmasg1_common.h"   // Include access to the header file
 
-#define CLASS_NAME "char"	  ///< The device class -- this is a character device driver
+#define DEVICE_NAME "lkmasg1_input" // Device name.
 
-#define BUFFER_SIZE 1024
-
-MODULE_LICENSE("GPL");						 ///< The license type -- this affects available functionality
-
-MODULE_AUTHOR("John Aedo");					 ///< The author -- visible when you use modinfo
-
-MODULE_DESCRIPTION("lkmasg1 Kernel Module"); ///< The description -- see modinfo
-
-MODULE_VERSION("0.1");						 ///< A version number to inform users
+MODULE_LICENSE("GPL");
+MODULE_AUTHOR("John Aedo");
+MODULE_DESCRIPTION("lkmasg1 Kernel Module");
+MODULE_VERSION("0.1");
 
 
-
-/**
-
- * Important variables that store data and keep track of relevant information.
-
- */
-
+// Important variables that store data and keep track of relevant information.
 static int major_number;
 
-
-
 static struct class *lkmasg1Class = NULL;	///< The device-driver class struct pointer
-
 static struct device *lkmasg1Device = NULL; ///< The device-driver device struct pointer
 
 
+// Prototype functions for file operations.
 
-/**
-
- * Prototype functions for file operations.
-
- */
 
 static int open(struct inode *, struct file *);
-
 static int close(struct inode *, struct file *);
-
 static ssize_t read(struct file *, char *, size_t, loff_t *);
-
 static ssize_t write(struct file *, const char *, size_t, loff_t *);
 
 
-
-// Circular buffer to store data in FIFO fashion
-
-static char mainBuffer[BUFFER_SIZE];
-
-static int buffer_head = 0;
-
-static int buffer_tail = 0;
-
-
-
-/**
-
- * File operations structure and the functions it points to.
-
- */
-
-static struct file_operations fops =
-
-	{
-
+// File operations structure and the functions it points to.
+static struct file_operations fops = {
 		.owner = THIS_MODULE,
-
 		.open = open,
-
 		.release = close,
-
 		.read = read,
-
 		.write = write,
-
 };
 
 
-
-/**
-
- * Initializes module at installation
-
- */
-
-int init_module(void)
-
-{
+//Initializes module at installation
+int init_module(void){
 
 	printk(KERN_INFO "lkmasg1: installing module.\n");
 
 
-
 	// Allocate a major number for the device.
-
 	major_number = register_chrdev(0, DEVICE_NAME, &fops);
 
-	if (major_number < 0)
-
-	{
+	if (major_number < 0){
 
 		printk(KERN_ALERT "lkmasg1 could not register number.\n");
 
@@ -138,9 +77,7 @@ int init_module(void)
 
 	lkmasg1Class = class_create(THIS_MODULE, CLASS_NAME);
 
-	if (IS_ERR(lkmasg1Class))
-
-	{ // Check for error and clean up if there is
+	if (IS_ERR(lkmasg1Class)){ // Check for error and clean up if there is
 
 		unregister_chrdev(major_number, DEVICE_NAME);
 
@@ -158,9 +95,7 @@ int init_module(void)
 
 	lkmasg1Device = device_create(lkmasg1Class, NULL, MKDEV(major_number, 0), NULL, DEVICE_NAME);
 
-	if (IS_ERR(lkmasg1Device))
-
-	{								 // Clean up if there is an error
+	if (IS_ERR(lkmasg1Device)){		 // Clean up if there is an error
 
 		class_destroy(lkmasg1Class); // Repeated code but the alternative is goto statements
 
@@ -181,16 +116,8 @@ int init_module(void)
 }
 
 
-
-/*
-
- * Removes module, sends appropriate message to kernel
-
- */
-
-void cleanup_module(void)
-
-{
+// Removes module, sends appropriate message to kernel
+void cleanup_module(void){
 
 	printk(KERN_INFO "lkmasg1: removing module.\n");
 
@@ -211,16 +138,8 @@ void cleanup_module(void)
 }
 
 
-
-/*
-
- * Opens device module, sends appropriate message to kernel
-
- */
-
-static int open(struct inode *inodep, struct file *filep)
-
-{
+//Opens device module, sends appropriate message to kernel
+static int open(struct inode *inodep, struct file *filep){
 
 	printk(KERN_INFO "lkmasg1: device opened.\n");
 
@@ -229,16 +148,8 @@ static int open(struct inode *inodep, struct file *filep)
 }
 
 
-
-/*
-
- * Closes device module, sends appropriate message to kernel
-
- */
-
-static int close(struct inode *inodep, struct file *filep)
-
-{
+// Closes device module, sends appropriate message to kernel
+static int close(struct inode *inodep, struct file *filep){
 
 	printk(KERN_INFO "lkmasg1: device closed.\n");
 
@@ -247,16 +158,8 @@ static int close(struct inode *inodep, struct file *filep)
 }
 
 
-
-/*
-
- * Reads from device, displays in userspace, and deletes the read data
-
- */
-
-static ssize_t read(struct file *filep, char *buffer, size_t len, loff_t *offset)
-
-{
+// Reads from device, displays in userspace, and deletes the read data
+static ssize_t read(struct file *filep, char *buffer, size_t len, loff_t *offset){
 
     int bytes_to_copy;
 
@@ -264,9 +167,7 @@ static ssize_t read(struct file *filep, char *buffer, size_t len, loff_t *offset
 
 
 
-    if (bytes_available == 0)
-
-    {
+    if (bytes_available == 0){
 
         printk(KERN_INFO "lkmasg1: nothing to read.\n");
 
@@ -280,9 +181,7 @@ static ssize_t read(struct file *filep, char *buffer, size_t len, loff_t *offset
 
    
 
-    if (copy_to_user(buffer, mainBuffer + buffer_tail, bytes_to_copy) != 0)
-
-    {
+    if (copy_to_user(buffer, mainBuffer + buffer_tail, bytes_to_copy) != 0){
 
         printk(KERN_ALERT "lkmasg1: failed to copy data to user space.\n");
 
@@ -315,24 +214,14 @@ static ssize_t read(struct file *filep, char *buffer, size_t len, loff_t *offset
 }
 
 
-
-/*
-
- * Writes to the device
-
- */
-
-static ssize_t write(struct file *filep, const char *buffer, size_t len, loff_t *offset)
-
-{
+// Writes to the device
+static ssize_t write(struct file *filep, const char *buffer, size_t len, loff_t *offset){
 
     int space_available = BUFFER_SIZE - buffer_head;
 
 
 
-    if (space_available == 0)
-
-    {
+    if (space_available == 0){
 
         printk(KERN_INFO "lkmasg1: no space available for writing.\n");
 
@@ -346,9 +235,7 @@ static ssize_t write(struct file *filep, const char *buffer, size_t len, loff_t 
 
 
 
-    if (copy_from_user(mainBuffer + buffer_head, buffer, bytes_to_copy) != 0)
-
-    {
+    if (copy_from_user(mainBuffer + buffer_head, buffer, bytes_to_copy) != 0){
 
         printk(KERN_ALERT "lkmasg1: failed to copy data from user space.\n");
 
