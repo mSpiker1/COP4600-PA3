@@ -2,7 +2,7 @@
  * File:	lkmasg1_output.c
 
  * Class:	COP4600-SP23
- */
+*/
 
 #include <linux/module.h>	  // Core header for modules.
 
@@ -23,11 +23,13 @@ MODULE_AUTHOR("John Aedo");
 MODULE_DESCRIPTION("lkmasg1 Output Kernel Module");
 MODULE_VERSION("0.1");
 
+
 // Important variables that store data and keep track of relevant information.
 static int major_number;
 
 static struct class *lkmasg1OutClass = NULL;	///< The device-driver class struct pointer
 static struct device *lkmasg1OutDevice = NULL; ///< The device-driver device struct pointer
+
 
 //Prototype Functions
 static int output_open(struct inode *, struct file *);
@@ -42,6 +44,7 @@ static struct file_operations output_fops = {
     .release = output_close,
     .write = output_write,
 };
+
 
 //Initializes module at installation
 int output_init_module(void){
@@ -63,12 +66,12 @@ int output_init_module(void){
 	printk(KERN_INFO "lkmasg1_output: registered correctly with major number %d\n", major_number);
 
 
-
 	// Register the device class
-
 	lkmasg1OutClass = class_create(THIS_MODULE, CLASS_NAME);
 
-	if (IS_ERR(lkmasg1OutClass)){ // Check for error and clean up if there is
+
+    // Check for error and clean up if there is
+	if (IS_ERR(lkmasg1OutClass)){
 
 		unregister_chrdev(major_number, DEVICE_NAME);
 
@@ -81,14 +84,15 @@ int output_init_module(void){
 	printk(KERN_INFO "lkmasg1_output: device class registered correctly\n");
 
 
-
 	// Register the device driver
-
 	lkmasg1OutDevice = device_create(lkmasg1OutClass, NULL, MKDEV(major_number, 0), NULL, DEVICE_NAME);
 
-	if (IS_ERR(lkmasg1OutDevice)){		 // Clean up if there is an error
 
-		class_destroy(lkmasg1OutClass); // Repeated code but the alternative is goto statements
+    // Clean up if there is an error
+	if (IS_ERR(lkmasg1OutDevice)){
+
+        // Repeated code but the alternative is goto statements
+		class_destroy(lkmasg1OutClass);
 
 		unregister_chrdev(major_number, DEVICE_NAME);
 
@@ -98,12 +102,9 @@ int output_init_module(void){
 
 	}
 
+
 	printk(KERN_INFO "lkmasg1_output: device class created correctly\n"); // Made it! device was initialized
-
-
-
 	return 0;
-
 }
 
 // Removes module, sends appropriate message to kernel
@@ -129,17 +130,23 @@ void cleanup_module(void){
 	return;
 }
 
+
+// Print to kernel that the device was opened
 static int output_open(struct inode *inodep, struct file *filep) {
 
     printk(KERN_INFO "lkmasg1_output: device opened.\n");
 	return 0;
 }
 
+
+// Print to kernel that the device was closed
 static int output_close(struct inode *inodep, struct file *filep) {
+
     printk(KERN_INFO "lkmasg1_output: device closed.\n");
 	return 0;
 }
 
+// Writes from buffer to user space
 static ssize_t output_write(struct file *filep, const char *buffer, size_t len, loff_t *offset) {
 
     int space_available = BUFFER_SIZE - buffer_head;

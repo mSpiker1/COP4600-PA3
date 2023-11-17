@@ -2,7 +2,7 @@
  * File:	lkmasg1_input.c
 
  * Class:	COP4600-SP23
- */
+*/
 
 #include <linux/module.h>	  // Core header for modules.
 
@@ -20,7 +20,7 @@
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("John Aedo");
-MODULE_DESCRIPTION("lkmasg1 Kernel Module");
+MODULE_DESCRIPTION("lkmasg1 Input Kernel Module");
 MODULE_VERSION("0.1");
 
 
@@ -32,8 +32,6 @@ static struct device *lkmasg1InDevice = NULL; ///< The device-driver device stru
 
 
 // Prototype functions for file operations.
-
-
 static int input_open(struct inode *, struct file *);
 static int input_close(struct inode *, struct file *);
 static ssize_t input_read(struct file *, char *, size_t, loff_t *);
@@ -127,7 +125,7 @@ void input_cleanup_module(void){
 }
 
 
-//Opens device module, sends appropriate message to kernel
+// Print to kernel that the device was opened
 static int input_open(struct inode *inodep, struct file *filep){
 
 	printk(KERN_INFO "lkmasg1_input: device opened.\n");
@@ -135,7 +133,7 @@ static int input_open(struct inode *inodep, struct file *filep){
 }
 
 
-// Closes device module, sends appropriate message to kernel
+// Print to kernel that the device was closed
 static int input_close(struct inode *inodep, struct file *filep){
 
 	printk(KERN_INFO "lkmasg1_input: device closed.\n");

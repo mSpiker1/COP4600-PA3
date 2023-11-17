@@ -1,6 +1,6 @@
 /**
- This is a header file with common dependencies and
- resources that both kernel module files will access
+ * This is a header file containing common dependencies &
+ * resources that both kernel module files will access
  */
 
 #ifndef LKMASG1_COMMON_H
@@ -11,7 +11,7 @@
 
 
 // Circular buffer to store data in FIFO fashion
-
+// Declared with extern to keep open to both modules
 extern char mainBuffer[BUFFER_SIZE];
 extern int buffer_head;
 extern int buffer_tail;
