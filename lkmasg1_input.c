@@ -4,8 +4,6 @@
  * Class:	COP4600-SP23
  */
 
-
-
 #include <linux/module.h>	  // Core header for modules.
 
 #include <linux/device.h>	  // Supports driver model.
@@ -29,17 +27,16 @@ MODULE_VERSION("0.1");
 // Important variables that store data and keep track of relevant information.
 static int major_number;
 
-static struct class *lkmasg1Class = NULL;	///< The device-driver class struct pointer
-static struct device *lkmasg1Device = NULL; ///< The device-driver device struct pointer
+static struct class *lkmasg1InClass = NULL;	///< The device-driver class struct pointer
+static struct device *lkmasg1InDevice = NULL; ///< The device-driver device struct pointer
 
 
 // Prototype functions for file operations.
 
 
-static int open(struct inode *, struct file *);
-static int close(struct inode *, struct file *);
-static ssize_t read(struct file *, char *, size_t, loff_t *);
-static ssize_t write(struct file *, const char *, size_t, loff_t *);
+static int input_open(struct inode *, struct file *);
+static int input_close(struct inode *, struct file *);
+static ssize_t input_read(struct file *, char *, size_t, loff_t *);
 
 
 // File operations structure and the functions it points to.
@@ -53,204 +50,134 @@ static struct file_operations fops = {
 
 
 //Initializes module at installation
-int init_module(void){
+int input_init_module(void){
 
-	printk(KERN_INFO "lkmasg1: installing module.\n");
-
+	printk(KERN_INFO "lkmasg1_input: installing module.\n");
 
 	// Allocate a major number for the device.
 	major_number = register_chrdev(0, DEVICE_NAME, &fops);
 
 	if (major_number < 0){
 
-		printk(KERN_ALERT "lkmasg1 could not register number.\n");
-
+		printk(KERN_ALERT "lkmasg1_input could not register number.\n");
 		return major_number;
-
 	}
 
-	printk(KERN_INFO "lkmasg1: registered correctly with major number %d\n", major_number);
-
-
+	printk(KERN_INFO "lkmasg1_input: registered correctly with major number %d\n", major_number);
 
 	// Register the device class
+	lkmasg1InClass = class_create(THIS_MODULE, CLASS_NAME);
 
-	lkmasg1Class = class_create(THIS_MODULE, CLASS_NAME);
-
-	if (IS_ERR(lkmasg1Class)){ // Check for error and clean up if there is
+	// Check for error and clean up if there is
+	if (IS_ERR(lkmasg1InClass)){
 
 		unregister_chrdev(major_number, DEVICE_NAME);
 
 		printk(KERN_ALERT "Failed to register device class\n");
 
-		return PTR_ERR(lkmasg1Class); // Correct way to return an error on a pointer
+		return PTR_ERR(lkmasg1InClass); // Correct way to return an error on a pointer
 
 	}
 
-	printk(KERN_INFO "lkmasg1: device class registered correctly\n");
-
-
+	printk(KERN_INFO "lkmasg1_input: device class registered correctly\n");
 
 	// Register the device driver
+	lkmasg1InDevice = device_create(lkmasg1InClass, NULL, MKDEV(major_number, 0), NULL, DEVICE_NAME);
 
-	lkmasg1Device = device_create(lkmasg1Class, NULL, MKDEV(major_number, 0), NULL, DEVICE_NAME);
 
-	if (IS_ERR(lkmasg1Device)){		 // Clean up if there is an error
+	// Clean up if there is an error
+	if (IS_ERR(lkmasg1InDevice)){
 
-		class_destroy(lkmasg1Class); // Repeated code but the alternative is goto statements
+		// Repeated code but the alternative is goto statements
+		class_destroy(lkmasg1InClass);
 
 		unregister_chrdev(major_number, DEVICE_NAME);
 
 		printk(KERN_ALERT "Failed to create the device\n");
 
-		return PTR_ERR(lkmasg1Device);
-
+		return PTR_ERR(lkmasg1InDevice);
 	}
 
-	printk(KERN_INFO "lkmasg1: device class created correctly\n"); // Made it! device was initialized
-
-
-
+	printk(KERN_INFO "lkmasg1_input: device class created correctly\n"); // Made it! device was initialized
 	return 0;
-
 }
 
 
 // Removes module, sends appropriate message to kernel
-void cleanup_module(void){
+void input_cleanup_module(void){
 
-	printk(KERN_INFO "lkmasg1: removing module.\n");
+	printk(KERN_INFO "lkmasg1_input: removing module.\n");
 
-	device_destroy(lkmasg1Class, MKDEV(major_number, 0)); // remove the device
+	// Remove the device
+	device_destroy(lkmasg1InClass, MKDEV(major_number, 0));
 
-	class_unregister(lkmasg1Class);						  // unregister the device class
+	// Unregister the device class
+	class_unregister(lkmasg1InClass);
 
-	class_destroy(lkmasg1Class);						  // remove the device class
+	// Remove the device class
+	class_destroy(lkmasg1InClass);
 
-	unregister_chrdev(major_number, DEVICE_NAME);		  // unregister the major number
+	// Unregister the major number
+	unregister_chrdev(major_number, DEVICE_NAME);
 
-	printk(KERN_INFO "lkmasg1: Goodbye from the LKM!\n");
-
+	printk(KERN_INFO "lkmasg1_input: Goodbye from the LKM!\n");
 	unregister_chrdev(major_number, DEVICE_NAME);
 
 	return;
-
 }
 
 
 //Opens device module, sends appropriate message to kernel
-static int open(struct inode *inodep, struct file *filep){
+static int input_open(struct inode *inodep, struct file *filep){
 
-	printk(KERN_INFO "lkmasg1: device opened.\n");
-
+	printk(KERN_INFO "lkmasg1_input: device opened.\n");
 	return 0;
-
 }
 
 
 // Closes device module, sends appropriate message to kernel
-static int close(struct inode *inodep, struct file *filep){
+static int input_close(struct inode *inodep, struct file *filep){
 
-	printk(KERN_INFO "lkmasg1: device closed.\n");
-
+	printk(KERN_INFO "lkmasg1_input: device closed.\n");
 	return 0;
-
 }
 
 
 // Reads from device, displays in userspace, and deletes the read data
-static ssize_t read(struct file *filep, char *buffer, size_t len, loff_t *offset){
+static ssize_t input_read(struct file *filep, char *buffer, size_t len, loff_t *offset){
 
     int bytes_to_copy;
-
     int bytes_available = buffer_head - buffer_tail;
-
-
 
     if (bytes_available == 0){
 
-        printk(KERN_INFO "lkmasg1: nothing to read.\n");
-
+        printk(KERN_INFO "lkmasg1_input: nothing to read.\n");
         return 0;
-
     }
-
 
 
     bytes_to_copy = min(len, bytes_available);
 
-   
 
     if (copy_to_user(buffer, mainBuffer + buffer_tail, bytes_to_copy) != 0){
 
-        printk(KERN_ALERT "lkmasg1: failed to copy data to user space.\n");
-
+        printk(KERN_ALERT "lkmasg1_input: failed to copy data to user space.\n");
         return -EFAULT;
-
     }
 
-    
 
     buffer_tail += bytes_to_copy;
 
-    
 
     // Remove the read data from mainBuffer
-
     memmove(mainBuffer, mainBuffer + buffer_tail, buffer_head - buffer_tail);
-
     buffer_head -= buffer_tail;
-
     buffer_tail = 0;
 
     
-
-    printk(KERN_INFO "lkmasg1: %d bytes read from the device.\n", bytes_to_copy);
-
-
-
+    printk(KERN_INFO "lkmasg1_input: %d bytes read from the device.\n", bytes_to_copy);
     return bytes_to_copy;
-
 }
 
-
-// Writes to the device
-static ssize_t write(struct file *filep, const char *buffer, size_t len, loff_t *offset){
-
-    int space_available = BUFFER_SIZE - buffer_head;
-
-
-
-    if (space_available == 0){
-
-        printk(KERN_INFO "lkmasg1: no space available for writing.\n");
-
-        return -ENOSPC;
-
-    }
-
-
-
-    int bytes_to_copy = min(len, space_available);
-
-
-
-    if (copy_from_user(mainBuffer + buffer_head, buffer, bytes_to_copy) != 0){
-
-        printk(KERN_ALERT "lkmasg1: failed to copy data from user space.\n");
-
-        return -EFAULT;
-
-    }
-
-
-
-    buffer_head += bytes_to_copy;
-
-    printk(KERN_INFO "lkmasg1: %d bytes written to the device.\n", bytes_to_copy);
-
-
-
-    return bytes_to_copy;
-
-}
+module_init(input_init_module);
+module_exit(input_cleanup_module);
