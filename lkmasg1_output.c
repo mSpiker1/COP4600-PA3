@@ -14,7 +14,7 @@
 
 #include <linux/uaccess.h>	  // User access copy function support.
 
-#include "lkmasg1_common.h"   // Include access to the header file
+#include "lkmasg1_common.h"	  // Include header file
 
 #define DEVICE_NAME "lkmasg1_output" // Device name.
 
