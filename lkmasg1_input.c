@@ -40,10 +40,9 @@ static ssize_t input_read(struct file *, char *, size_t, loff_t *);
 // File operations structure and the functions it points to.
 static struct file_operations fops = {
 		.owner = THIS_MODULE,
-		.open = open,
-		.release = close,
-		.read = read,
-		.write = write,
+		.open = input_open,
+		.release = input_close,
+		.read = input_read,
 };
 
 
