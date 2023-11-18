@@ -38,7 +38,7 @@ static ssize_t input_read(struct file *, char *, size_t, loff_t *);
 
 
 // File operations structure and the functions it points to.
-static struct file_operations fops = {
+static struct file_operations input_fops = {
 		.owner = THIS_MODULE,
 		.open = input_open,
 		.release = input_close,
@@ -52,7 +52,7 @@ int input_init_module(void){
 	printk(KERN_INFO "lkmasg1_input: installing module.\n");
 
 	// Allocate a major number for the device.
-	major_number = register_chrdev(0, DEVICE_NAME, &fops);
+	major_number = register_chrdev(0, DEVICE_NAME, &input_fops);
 
 	if (major_number < 0){
 
@@ -144,7 +144,7 @@ static int input_close(struct inode *inodep, struct file *filep){
 static ssize_t input_read(struct file *filep, char *buffer, size_t len, loff_t *offset){
 
     int bytes_to_copy;
-    int bytes_available = buffer_head - buffer_tail;
+    size_t bytes_available = buffer_head - buffer_tail;
 
     if (bytes_available == 0){
 

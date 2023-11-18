@@ -53,7 +53,7 @@ int output_init_module(void){
 
 
 	// Allocate a major number for the device.
-	major_number = register_chrdev(0, DEVICE_NAME, &fops);
+	major_number = register_chrdev(0, DEVICE_NAME, &output_fops);
 
 	if (major_number < 0){
 
@@ -108,7 +108,7 @@ int output_init_module(void){
 }
 
 // Removes module, sends appropriate message to kernel
-void cleanup_module(void){
+void output_cleanup_module(void){
 
 	printk(KERN_INFO "lkmasg1_output: removing module.\n");
 
@@ -149,16 +149,17 @@ static int output_close(struct inode *inodep, struct file *filep) {
 // Writes from buffer to user space
 static ssize_t output_write(struct file *filep, const char *buffer, size_t len, loff_t *offset) {
 
-    int space_available = BUFFER_SIZE - buffer_head;
+    size_t bytes_available = BUFFER_SIZE - buffer_head;
+	int bytes_to_copy;
 
     // Ensure the necessary memory exists within the buffer
-    if (space_available == 0) {
+    if (bytes_available == 0) {
         printk(KERN_INFO "lkmasg1_output: no space available for writing.\n");
         return -ENOSPC;
     }
 
 
-    int bytes_to_copy = min(len, space_available);
+    bytes_to_copy = min(len, bytes_available);
 
     // Catch any issues copying data from user space
     if (copy_from_user(mainBuffer + buffer_head, buffer, bytes_to_copy) != 0) {
