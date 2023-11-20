@@ -1,16 +1,42 @@
-obj-m += lkmasg1_common.o lkmasg1_input.o lkmasg1_output.o
+# Makefile for lkmasg1 kernel modules
 
-all: lkmasg1_input.o lkmasg1_output.o
 
-lkmasg1_common.o: lkmasg1_common.c lkmasg1_common.h
-	$(MAKE) -C /lib/modules/$(shell uname -r)/build M=$(PWD) $@
 
-lkmasg1_input.o: lkmasg1_input.c lkmasg1_common.h
-	$(MAKE) -C /lib/modules/$(shell uname -r)/build M=$(PWD) $@
+obj-m += lkmasg1_input.o
 
-lkmasg1_output.o: lkmasg1_output.c lkmasg1_common.h
-	$(MAKE) -C /lib/modules/$(shell uname -r)/build M=$(PWD) $@
+obj-m += lkmasg1_output.o
+
+
+
+# Path to the kernel source code
+
+KDIR := /lib/modules/$(shell uname -r)/build
+
+
+
+# Current directory
+
+PWD := $(shell pwd)
+
+
+
+all: lkmasg1_input.ko lkmasg1_output.ko
+
+
+
+lkmasg1_input.ko: lkmasg1_input.c lkmasg1_common.h
+
+	$(MAKE) -C $(KDIR) M=$(PWD) modules
+
+
+
+lkmasg1_output.ko: lkmasg1_output.c lkmasg1_common.h
+
+	$(MAKE) -C $(KDIR) M=$(PWD) modules
+
+
 
 clean:
-	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) clean
-	rm -f test
+
+	$(MAKE) -C $(KDIR) M=$(PWD) clean
+
