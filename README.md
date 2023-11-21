@@ -1,26 +1,36 @@
----
-tags: [teaching/cop4600, assignments, linux]
----
-## Learning Objective 
-To gain a fuller understanding of critical sections in the Linux kernel by programming them.
+## How To Use
+First, make sure you have all files in the same directory.
+Use *cd directory_name* in your terminal to navigate to the directory.
 
-## Development 
-Use gcc and the C programming language, on the version of Linux we have in our VM.
+## Step 1 - Make the files
 
-## Assignment
-Re-implement your module from the device driver assignment as two separate kernel modules - one for an input device, and one for an output device, using shared memory between the two modules to manage the communication.
+Run *make clean* to clean any make files before re-making them. You're going to want to do this when you recompile code to make sure you have the latest build.
 
-Don’t overthink the shared memory in the kernel – do a bit of Googling about sharing memory between kernel modules, and you’ll find that it’s as simple as an **extern** declaration in the right place.
+Run *make* to create the share_memory.ko, input_device.ko, and output_device.ko files.
 
-What you *will* need to put some work into is properly guarding the critical sections.  Investigate the functionality in **linux/mutex.h**.  Derek Molloy’s documentation can help you here as well.
+## Step 2 - Install the modules
 
-## Helpful References
-Below are some resources that will help you structure a device driver.  Feel free to ask the professor and the teaching assistants for advice, but you should read over the relevant bits of these resources first.
+If you already have modules installed from previous build attempts, go ahead and remove them using *sudo rmmod module_name*.
+To see if you have any previous modules loaded that you built, you can use *ls /dev/* to view the kernel modules.
 
-Peter Jay Salzman, Michael Burian, Ori Pomerantz.  _The Linux Kernel Module Programming Guide._  [http://www.tldp.org/LDP/lkmpg/2.6/html/](http://www.tldp.org/LDP/lkmpg/2.6/html/)
+To install the modules, run:
 
-Derek Molloy.  _Writing a Linux Kernel Module - Part 2: A Character Device_.  [http://derekmolloy.ie/writing-a-linux-kernel-module-part-2-a-character-device/](http://derekmolloy.ie/writing-a-linux-kernel-module-part-2-a-character-device/)
+*sudo insmod shared_memory.ko* - Do this first, as both devices need the shared memory to be initialized.
+*sudo insmod input_device.ko*
+*sudo insmod output_device.ko*
 
-## Submitting
+These installs the modules created in the previous step.
 
-Zip up your code, and upload it to Webcourses.  Include the makefile.
+## Step 3 - Testing
+
+If you run *sudo dmesg* you can see all the messages written to the kernel, which is where we are going to get out printk statements from out modules.
+
+Let's test the program. First, use *sudo dmesg* to view messages.
+
+Then, use *echo "This is a test sentence." | sudo tee /dev/input_device*. This command inputs the sentence to the input device where it is written to the shared memory.
+
+Use *sudo dmesg* to view updates.
+
+Finally, use *sudo cat /dev/output_device* This command reads from the output device, which should show the test message written above.
+
+Use one last *sudo dmesg* to view the kernel print statements after executing.
