@@ -33,4 +33,4 @@ Use *sudo dmesg* to view updates.
 
 Finally, use *sudo cat /dev/output_device* This command reads from the output device, which should show the test message written above.
 
-Use one last *sudo dmesg* to view the kernel print statements after executing.
+Use one last *sudo dmesg* to view the kernel print statements after executing commands.
