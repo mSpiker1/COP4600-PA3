@@ -1,42 +1,18 @@
-# Makefile for lkmasg1 kernel modules
+obj-m += input_device.o
+
+obj-m += output_device.o
+
+obj-m += shared_memory.o
 
 
 
-obj-m += lkmasg1_input.o
+all:
 
-obj-m += lkmasg1_output.o
-
-
-
-# Path to the kernel source code
-
-KDIR := /lib/modules/$(shell uname -r)/build
-
-
-
-# Current directory
-
-PWD := $(shell pwd)
-
-
-
-all: lkmasg1_input.ko lkmasg1_output.ko
-
-
-
-lkmasg1_input.ko: lkmasg1_input.c lkmasg1_common.h
-
-	$(MAKE) -C $(KDIR) M=$(PWD) modules
-
-
-
-lkmasg1_output.ko: lkmasg1_output.c lkmasg1_common.h
-
-	$(MAKE) -C $(KDIR) M=$(PWD) modules
+	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) modules
 
 
 
 clean:
 
-	$(MAKE) -C $(KDIR) M=$(PWD) clean
+	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) clean
 
