@@ -64,7 +64,7 @@ int init_module(void)
 
 {
 
-    printk(KERN_INFO "output_device: installing module.\n");
+    pr_info("lkmasg2 Output Device module installing.\n");
 
 
 
@@ -74,7 +74,7 @@ int init_module(void)
 
     {
 
-        printk(KERN_ALERT "output_device: could not register number.\n");
+        pr_alert("lkmasg2 output_device: could not register number.\n");
 
         return major_number;
 
@@ -82,7 +82,7 @@ int init_module(void)
 
 
 
-    printk(KERN_INFO "output_device: registered correctly with major number %d\n", major_number);
+    pr_info("lkmasg2 output_device: registered correctly with major number %d\n", major_number);
 
 
 
@@ -94,7 +94,7 @@ int init_module(void)
 
         unregister_chrdev(major_number, OUTPUT_DEVICE_NAME);
 
-        printk(KERN_ALERT "Failed to register device class\n");
+        pr_alert("lkmasg2 Failed to register device class\n");
 
         return PTR_ERR(outputClass);
 
@@ -112,7 +112,7 @@ int init_module(void)
 
         unregister_chrdev(major_number, OUTPUT_DEVICE_NAME);
 
-        printk(KERN_ALERT "Failed to create the device\n");
+        pr_alert("lkmasg2 Failed to create the device\n");
 
         return PTR_ERR(outputDevice);
 
@@ -121,6 +121,10 @@ int init_module(void)
 
 
     mutex_init(&output_mutex);
+
+
+
+    pr_info("lkmasg2 Output Device module installed.\n");
 
 
 
@@ -134,8 +138,6 @@ void cleanup_module(void)
 
 {
 
-    printk(KERN_INFO "output_device: removing module.\n");
-
     device_destroy(outputClass, MKDEV(major_number, 0));
 
     class_unregister(outputClass);
@@ -144,7 +146,7 @@ void cleanup_module(void)
 
     unregister_chrdev(major_number, OUTPUT_DEVICE_NAME);
 
-    printk(KERN_INFO "output_device: Goodbye from the output device!\n");
+    pr_info("lkmasg2 output_device: Removing Module. Goodbye from the output device!\n");
 
 }
 
@@ -154,7 +156,7 @@ static int output_open(struct inode *inodep, struct file *filep)
 
 {
 
-    printk(KERN_INFO "output_device: device opened.\n");
+    pr_info("lkmasg2 output_device: device opened.\n");
 
     return 0;
 
@@ -166,7 +168,7 @@ static int output_close(struct inode *inodep, struct file *filep)
 
 {
 
-    printk(KERN_INFO "output_device: device closed.\n");
+    pr_info("lkmasg2 output_device: device closed.\n");
 
     return 0;
 
@@ -178,13 +180,35 @@ static ssize_t output_read(struct file *filep, char *buffer, size_t len, loff_t 
 
 {
 
-    int bytes_to_copy;
+    int data_length, bytes_to_copy;
 
-    int data_length;
+    
+
+    // Check if we've reached the end of the file
+
+    if (*offset > 0)
+
+    {
+
+    	mutex_unlock(&output_mutex);
+
+    	return 0; // Reached EOF
+
+    }
+
+    
+
+    pr_info("lkmasg2 Reader - Entered read().\n");
 
 
 
     mutex_lock(&output_mutex);
+
+    pr_info("lkmasg2 Reader - Acquired the lock.\n");
+
+
+
+    
 
 
 
@@ -198,7 +222,7 @@ static ssize_t output_read(struct file *filep, char *buffer, size_t len, loff_t 
 
         mutex_unlock(&output_mutex);
 
-        printk(KERN_INFO "output_device: no data available for reading.\n");
+        pr_info("lkmasg2 Reader - Buffer is empty, unable to read.\n");
 
         return 0; // EOF
 
@@ -216,7 +240,7 @@ static ssize_t output_read(struct file *filep, char *buffer, size_t len, loff_t 
 
         mutex_unlock(&output_mutex);
 
-        printk(KERN_ALERT "output_device: failed to copy data to user space.\n");
+        pr_alert("lkmasg2 Reader - Failed to copy data to user space.\n");
 
         return -EFAULT;
 
@@ -230,15 +254,31 @@ static ssize_t output_read(struct file *filep, char *buffer, size_t len, loff_t 
 
 
 
-    printk(KERN_INFO "output_device: %d bytes read from the device.\n", bytes_to_copy);
+    pr_info("lkmasg2 Reader - Read %d bytes from the buffer.\n", bytes_to_copy);
 
 
 
     mutex_unlock(&output_mutex);
+
+    pr_info("lkmasg2 Reader - Exiting read() function.\n");
+
+
+
+    // Update the offset to indicate the end of file
+
+    *offset += bytes_to_copy;
 
 
 
     return bytes_to_copy;
 
 }
+
+
+
+
+
+
+
+
 
