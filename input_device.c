@@ -10,6 +10,10 @@
 
 #include "shared_memory.h"
 
+#include <linux/kernel.h>
+
+#include <linux/slab.h>
+
 
 
 #define INPUT_DEVICE_NAME "input_device"
@@ -180,7 +184,9 @@ static ssize_t input_write(struct file *filep, const char *buffer, size_t len, l
 
 {
 
-    int space_available, bytes_to_copy;
+    int space_available;
+
+    size_t bytes_to_copy;
 
 
 
@@ -190,23 +196,13 @@ static ssize_t input_write(struct file *filep, const char *buffer, size_t len, l
 
     mutex_lock(&input_mutex);
 
+
+
     pr_info("lkmasg2 Writer - Acquired the lock.\n");
 
 
 
     space_available = SHARED_MEM_SIZE - strlen(shared_memory);
-
-
-
-    if (len > space_available)
-
-    {
-
-        pr_info("lkmasg2 Writer - Buffer has %d bytes remaining, attempting to write %zu, truncating input.\n", space_available, len);
-
-        len = space_available; // Truncate to available space
-
-    }
 
 
 
@@ -224,9 +220,23 @@ static ssize_t input_write(struct file *filep, const char *buffer, size_t len, l
 
 
 
+    if (len > space_available)
+
+    {
+
+        pr_info("lkmasg2 Writer - Buffer has %d bytes remaining, attempting to write %zu, truncating input.\n", space_available, len);
+
+        len = space_available; // Truncate to available space
+
+    }
+
+
+
     bytes_to_copy = min_t(size_t, len, space_available);
 
 
+
+    // Copy data from user space to shared_memory
 
     if (copy_from_user(shared_memory + strlen(shared_memory), buffer, bytes_to_copy) != 0)
 
@@ -242,7 +252,13 @@ static ssize_t input_write(struct file *filep, const char *buffer, size_t len, l
 
 
 
-    pr_info("lkmasg2 Writer - Wrote %d bytes to the buffer.\n", bytes_to_copy);
+    // Update the null-terminated buffer size
+
+    shared_memory[SHARED_MEM_SIZE - 1] = '\0';
+
+
+
+    pr_info("lkmasg2 Writer - Wrote %zu bytes to the buffer.\n", bytes_to_copy);
 
 
 
@@ -255,4 +271,18 @@ static ssize_t input_write(struct file *filep, const char *buffer, size_t len, l
     return bytes_to_copy;
 
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
