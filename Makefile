@@ -1,16 +1,15 @@
-obj-m += lkmasg1_common.o lkmasg1_input.o lkmasg1_output.o
+obj-m += lkmasg2_writer.o lkmasg2_reader.o
 
-all: lkmasg1_input.o lkmasg1_output.o
 
-lkmasg1_common.o: lkmasg1_common.c lkmasg1_common.h
-	$(MAKE) -C /lib/modules/$(shell uname -r)/build M=$(PWD) $@
 
-lkmasg1_input.o: lkmasg1_input.c lkmasg1_common.h
-	$(MAKE) -C /lib/modules/$(shell uname -r)/build M=$(PWD) $@
+all:
 
-lkmasg1_output.o: lkmasg1_output.c lkmasg1_common.h
-	$(MAKE) -C /lib/modules/$(shell uname -r)/build M=$(PWD) $@
+	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) modules
+
+	gcc -o test test.c
 
 clean:
+
 	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) clean
+
 	rm -f test

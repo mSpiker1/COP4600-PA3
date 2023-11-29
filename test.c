@@ -1,56 +1,102 @@
-/**
-NOTE: This test file does not currently work as intended for our use case
-This is still the original test file from the second PA
- */
-#include <stdio.h>
-#include <stdlib.h>
-#include <errno.h>
+// Small test program created to test functionality of write/read between modules.
+
+
+
 #include <fcntl.h>
-#include <string.h>
+
+#include <stdio.h>
+
+#include <stdlib.h>
+
 #include <unistd.h>
 
-#define BUFFER_LENGTH 256           ///< The buffer length (crude but fine)
-static char receive[BUFFER_LENGTH]; ///< The receive buffer from the LKM
 
-int main(int argc, char *argv[])
-{
-    if (argc != 2)
-    {
-        printf("Usage: test <path to device>\n");
-        exit(0);
-    }
-    char *devicepath = argv[1];
 
-    int ret, fd;
-    char stringToSend[BUFFER_LENGTH];
-    printf("Starting device test code example...\n");
-    fd = open(devicepath, O_RDWR); // Open the device with read/write access
-    if (fd < 0)
-    {
-        perror("Failed to open the device...");
-        return errno;
-    }
-    printf("Type in a short string to send to the kernel module:\n");
-    scanf("%[^\n]%*c", stringToSend); // Read in a string (with spaces)
-    printf("Writing message to the device [%s].\n", stringToSend);
-    ret = write(fd, stringToSend, strlen(stringToSend)); // Send the string to the LKM
-    if (ret < 0)
-    {
-        perror("Failed to write the message to the device.");
-        return errno;
+#define MESSAGE "Hello, world!" // Enter your message to test write/read
+
+
+
+int main() {
+
+    // Open the writer device file
+
+    int writer_fd = open("/dev/lkmasg2_writer", O_WRONLY);
+
+    if (writer_fd < 0) {
+
+        perror("Failed to open writer device");
+
+        exit(EXIT_FAILURE);
+
     }
 
-    printf("Press ENTER to read back from the device...\n");
-    getchar();
 
-    printf("Reading from the device...\n");
-    ret = read(fd, receive, BUFFER_LENGTH); // Read the response from the LKM
-    if (ret < 0)
-    {
-        perror("Failed to read the message from the device.");
-        return errno;
+
+    // Write a message to the writer device
+
+    ssize_t bytes_written = write(writer_fd, MESSAGE, sizeof(MESSAGE) - 1);
+
+    if (bytes_written < 0) {
+
+        perror("Failed to write to writer device");
+
+        close(writer_fd);
+
+        exit(EXIT_FAILURE);
+
     }
-    printf("The received message is: [%s]\n", receive);
-    printf("End of the program\n");
+
+
+
+    printf("Wrote %zd bytes to the writer device\n", bytes_written);
+
+
+
+    close(writer_fd);
+
+
+
+    // Open the reader device file
+
+    int reader_fd = open("/dev/lkmasg2_reader", O_RDONLY);
+
+    if (reader_fd < 0) {
+
+        perror("Failed to open reader device");
+
+        exit(EXIT_FAILURE);
+
+    }
+
+
+
+    // Read from the reader device
+
+    char buffer[1025];
+
+    ssize_t bytes_read = read(reader_fd, buffer, sizeof(buffer));
+
+    if (bytes_read < 0) {
+
+        perror("Failed to read from reader device");
+
+        close(reader_fd);
+
+        exit(EXIT_FAILURE);
+
+    }
+
+
+
+    printf("Read %zd bytes from the reader device: %.*s\n", bytes_read, (int)bytes_read, buffer); // Prints read output 
+
+
+
+    close(reader_fd);
+
+
+
     return 0;
+
 }
+
