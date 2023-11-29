@@ -8,7 +8,7 @@
 
 
 
-#define SHARED_MEM_SIZE 1042
+#define SHARED_MEM_SIZE 1024
 
 
 
