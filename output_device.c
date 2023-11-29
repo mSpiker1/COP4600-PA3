@@ -190,13 +190,13 @@ static ssize_t output_read(struct file *filep, char *buffer, size_t len, loff_t 
 
     {
 
-    	mutex_unlock(&output_mutex);
+        mutex_unlock(&output_mutex);
 
-    	return 0; // Reached EOF
+        return 0; // Reached EOF
 
     }
 
-    
+
 
     pr_info("lkmasg2 Reader - Entered read().\n");
 
@@ -208,11 +208,9 @@ static ssize_t output_read(struct file *filep, char *buffer, size_t len, loff_t 
 
 
 
-    
+    // Calculate data length, assuming shared_memory is a null-terminated string
 
-
-
-    data_length = strlen(shared_memory);
+    data_length = strnlen(shared_memory, SHARED_MEM_SIZE);
 
 
 
@@ -234,6 +232,20 @@ static ssize_t output_read(struct file *filep, char *buffer, size_t len, loff_t 
 
 
 
+    if (bytes_to_copy == 0)
+
+    {
+
+        mutex_unlock(&output_mutex);
+
+        pr_info("lkmasg2 Reader - No bytes to copy.\n");
+
+        return 0; // No bytes to copy
+
+    }
+
+
+
     if (copy_to_user(buffer, shared_memory, bytes_to_copy) != 0)
 
     {
@@ -242,7 +254,7 @@ static ssize_t output_read(struct file *filep, char *buffer, size_t len, loff_t 
 
         pr_alert("lkmasg2 Reader - Failed to copy data to user space.\n");
 
-        return -EFAULT;
+        return -EFAULT; // Return an error code
 
     }
 
@@ -251,6 +263,10 @@ static ssize_t output_read(struct file *filep, char *buffer, size_t len, loff_t 
     // Shift remaining data to the beginning of the shared memory
 
     memmove(shared_memory, shared_memory + bytes_to_copy, data_length - bytes_to_copy + 1);
+
+
+
+    data_length -= bytes_to_copy; // Update the length after successful read
 
 
 
@@ -273,6 +289,12 @@ static ssize_t output_read(struct file *filep, char *buffer, size_t len, loff_t 
     return bytes_to_copy;
 
 }
+
+
+
+
+
+
 
 
 
